@@ -157,10 +157,6 @@ class Bot:
         self.lastY = self.currY
         self.lastZ = self.currZ
 
-        # Turn to the final direction
-        while self.currDirection != direction:
-            await self.right()
-
         # Get the disctance that we are from each desired point
         deltaX = abs(x - self.currX)
         deltaY = abs(y - self.currY)
@@ -168,7 +164,16 @@ class Bot:
 
         # Go halfway through x
         halfDeltaX = deltaX // 2
-        await self.back(halfDeltaX)
+        
+        if self.currX > x:
+            while self.currDirection != "backward":
+                await self.right()
+
+        else:
+            while self.currDirection != "forward":
+                await self.right()
+
+        await self.forward(halfDeltaX)
 
         # Align Z
         while self.currZ != z:
@@ -178,35 +183,64 @@ class Bot:
                 await self.up()
 
         # Align Y
-        if self.currDirection == "forward":
-            if self.currY < y:
-                while self.currDirection != "left":
-                    await self.left()
+        if y >= 0:
+            if self.currDirection == "forward":
+                if self.currY < y:
+                    while self.currDirection != "left":
+                        await self.left()
 
-            else:
-                while self.currDirection != "right":
-                    await self.left()
+                else:
+                    while self.currDirection != "right":
+                        await self.left()
 
-        elif self.currDirection == "backward":
-            if self.currY < y:
-                while self.currDirection != "right":
-                    await self.left()
+            elif self.currDirection == "backward":
+                if self.currY < y:
+                    while self.currDirection != "right":
+                        await self.left()
 
-            else:
-                while self.currDirection != "left":
-                    await self.left()
+                else:
+                    while self.currDirection != "left":
+                        await self.left()
+
+        else:
+            if self.currDirection == "forward":
+                if self.currY > y:
+                    while self.currDirection != "left":
+                        await self.left()
+
+                else:
+                    while self.currDirection != "right":
+                        await self.left()
+
+            elif self.currDirection == "backward":
+                if self.currY > y:
+                    while self.currDirection != "right":
+                        await self.left()
+
+                else:
+                    while self.currDirection != "left":
+                        await self.left()
 
 
         while self.currY != y:
             await self.forward()
 
         # Realign direction
-        while self.currDirection != direction:
-            await self.right()
+        if self.currX > x:
+            while self.currDirection != "backward":
+                await self.right()
+
+        else:
+            while self.currDirection != "forward":
+                await self.right()
 
         # Rest of the way through x
         while self.currX != x:
-            await self.back()
+            await self.forward()
+
+        # Set final direction
+        while self.currDirection != direction:
+            await self.right()
 
 
 
@@ -260,11 +294,29 @@ class Bot:
 
     # Checks if the fuel is too low and then refills it
     async def checkRefuel(self):
-        pass
+        fuel = await self.fuelLevel()
+        if float(fuel) < 500:
+            res = await self.refuel()
+
+            if res != "true":
+                await self.gotTo(0, 0, 1, "backward")
+                await self.grabFuel()
+                await self.refuel()
+
+                # Return to work
+                await self.gotTo(self.lastX, self.lastY, self.lastZ, self.lastDirection)
 
     # Checks if the inventory is too full and empties
     async def checkInventoryFull(self):
-        pass
+        filled = await self.fullSpaces()
+        
+        if float(filled) > 14:
+            await self.gotTo(0, 0, 0, "backward")
+            await self.emptyAll()
+
+            # Return to work
+            await self.gotTo(self.lastX, self.lastY, self.lastZ, self.lastDirection)
+            
 
 
 
