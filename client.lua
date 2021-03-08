@@ -84,7 +84,16 @@ while run do
     elseif command == "left" then
         turtle.turnLeft()
         ws.send("true")
-        
+
+    elseif command == "place" then
+        ws.send(turtle.place())
+
+    elseif command == "placeUp" then
+        ws.send(turtle.placeUp())
+
+    elseif command == "placeDown" then
+        ws.send(turtle.placeDown())
+
     -- Returns the number of slots that are full
     elseif command == "fullSpaces" then
         count = 0
