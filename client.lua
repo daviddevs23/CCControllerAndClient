@@ -2,19 +2,6 @@ host = "ws://localhost:8888"
 
 ws, err = http.websocket(host)
 
---print("Where the bot is currently placed is the bottom, right")
---print("Please Enter a width")
---width = read()
---ws.send(width)
---
---print("Please Enter a depth")
---depth = read()
---ws.send(depth)
---
---print("Please Enter a height")
---height = read()
---ws.send(height)
-
 run = true
 
 while run do
@@ -86,10 +73,10 @@ while run do
         ws.send("true")
 
     elseif command == "place" then
-        ws.send(turtle.place())
+        ws.send(tostring(turtle.place()))
 
     elseif command == "placeUp" then
-        ws.send(turtle.placeUp())
+        ws.send(tostring(turtle.placeUp()))
 
     elseif command == "placeDown" then
         ws.send(turtle.placeDown())
@@ -153,6 +140,16 @@ while run do
         turtle.select(16)
         res = turtle.suck()
         turtle.select(currentSlot)
+        ws.send(res)
+
+    elseif command == "grabSupplies" then
+        res = "true"
+        for i=1,14,1 do
+            turtle.select(i)
+            res = turtle.suck()
+        end
+        turtle.select(1)
+
         ws.send(res)
 
     end
