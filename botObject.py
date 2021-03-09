@@ -150,6 +150,10 @@ class Bot:
         await self.websocket.send("grabFuel")
         return await self.websocket.recv()
 
+    async def grabSupplies(self):
+        await self.websocket.send("grabSupplies")
+        return await self.websocket.recv()
+
     # Command that makes the bot go to a coordinate and face that direction
     async def gotTo(self, x, y, z, direction):
         self.lastDirection = self.currDirection
@@ -213,12 +217,12 @@ class Bot:
                         await self.left()
 
             elif self.currDirection == "backward":
-                if self.currY > y:
-                    while self.currDirection != "right":
+                if self.currY < y:
+                    while self.currDirection != "left":
                         await self.left()
 
                 else:
-                    while self.currDirection != "left":
+                    while self.currDirection != "right":
                         await self.left()
 
 
@@ -289,8 +293,24 @@ class Bot:
 
 
     # Checks if the inventory needs to be refilled and then refills it
+    # If just the current slot is empty, it will go to the next one that is not
+    # empty. If the current slot is empty and equal to 14, then refill
     async def checkInventoryRefill(self):
-        pass
+        slot = await self.currentSlot()
+        slot = int(slot)
+        inventory = await self.getInventory()
+        inventory = inventory.split(" ")
+        current_amount = inventory[slot - 1]
+
+        if current_amount == "d;d":
+            if slot < 15:
+                await self.pickSlot(slot + 1)
+                await self.placeDown()
+
+            else: 
+                await self.gotTo(0, 0, 3, "backward")
+                await self.grabSupplies()
+                await self.gotTo(self.lastX, self.lastY, self.lastZ, self.lastDirection)
 
     # Checks if the fuel is too low and then refills it
     async def checkRefuel(self):
@@ -317,6 +337,158 @@ class Bot:
             # Return to work
             await self.gotTo(self.lastX, self.lastY, self.lastZ, self.lastDirection)
             
+    # Builds an enclosed block out of things in it's inventory
+    async def bridge(self, distance):
+        await self.pickSlot(1)
+
+        #Build right path
+        for i in range(distance - 1):
+            await self.dig()
+            await self.digUp()
+            res = await self.placeDown()
+            if res == "false":
+                await self.checkInventoryRefill()
+
+            await self.forward()
+
+        await self.checkRefuel()
+
+        res = await self.placeDown()
+        if res == "false":
+            await self.checkInventoryRefill()
+
+        await self.left()
+        await self.forward()
+        await self.left()
+
+        # Build left path
+        for i in range(distance - 1):
+            await self.dig()
+            await self.digUp()
+            res = await self.placeDown()
+            if res == "false":
+                await self.checkInventoryRefill()
+            await self.forward()
+
+        await self.checkRefuel()
+
+        res = await self.placeDown()
+        if res == "false":
+            await self.checkInventoryRefill()
+
+        await self.up()
+        await self.right()
+        await self.dig()
+        await self.forward()
+        await self.right()
+
+        # Build left Rail
+        for i in range(distance - 1):
+            await self.dig()
+            res = await self.placeDown()
+            if res == "false":
+                await self.checkInventoryRefill()
+
+            await self.forward()
+
+        await self.checkRefuel()
+
+        res = await self.placeDown()
+        if res == "false":
+            await self.checkInventoryRefill()
+
+        await self.right()
+        await self.forward()
+        await self.forward()
+        await self.forward()
+        await self.right()
+
+
+        # Build right Rail
+        for i in range(distance - 1):
+            await self.dig()
+            res = await self.placeDown()
+            if res == "false":
+                await self.checkInventoryRefill()
+
+            await self.forward()
+
+        await self.checkRefuel()
+
+        res = await self.placeDown()
+        if res == "false":
+            await self.checkInventoryRefill()
+
+    async def buildRoom(self, width, height, depth):
+        # Get into position
+        await self.digDown()
+        await self.down()
+        await self.right()
+        await self.dig()
+        await self.forward()
+        await self.left()
+        
+        # Clear out bulk of room
+        await self.clearSpace(width + 2, height + 2, depth + 2)
+
+        # Empty Inventory
+        await self.right()
+        await self.right()
+        await self.emptyAll()
+
+        # Fill Inventory
+        await self.up()
+        await self.up()
+        await self.grabSupplies()
+        await self.down()
+        await self.down()
+        await self.right()
+        await self.right()
+
+        # Line floor
+        await self.forward()
+        await self.right()
+        await self.forward()
+        await self.left()
+
+        for i in range(width + 2):
+            for j in range(depth + 2):
+                res = await self.placeDown()
+                if res == "false":
+                    await self.checkInventoryRefill()
+                if j != depth + 1:
+                    await self.forward()
+
+            if i % 2 == 0:
+                await self.left()
+                await self.forward()
+                await self.left()
+
+            else:
+                await self.right()
+                await self.forward()
+                await self.right()
+
+        await self.up()
+        await self.left()
+        for i in range(width + 1):
+            await self.forward()
+
+        await self.left()
+        
+        # Line walls
+
+        # Line Ceiling
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -1,19 +1,17 @@
 import websockets
 import asyncio
 import time
+from botObject import Bot
+
 
 async def open(websocket, path):
+    
+    bot = Bot(websocket)
 
-    await websocket.send("fuelLevel")
-    print(await websocket.recv())
+    await bot.buildRoom(4,4,4)
 
-    await websocket.send("refuel")
-    print(await websocket.recv())
+    await bot.stop()
 
-    await websocket.send("fuelLevel")
-    print(await websocket.recv())
-
-    await websocket.send("stop")
 
 start_server = websockets.serve(open, "localhost", 8888)
 

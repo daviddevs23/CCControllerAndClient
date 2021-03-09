@@ -79,7 +79,7 @@ while run do
         ws.send(tostring(turtle.placeUp()))
 
     elseif command == "placeDown" then
-        ws.send(turtle.placeDown())
+        ws.send(tostring(turtle.placeDown()))
 
     -- Returns the number of slots that are full
     elseif command == "fullSpaces" then
